@@ -1,27 +1,27 @@
 const workflowData = [
-  ['Pattern drafting', 'Body measurements translated to templates'],
-  ['Fabric spreading', 'Minimize waste with grainline alignment'],
-  ['Cutting & marking', 'Precision cutting based on seam allowances'],
-  ['Stitching', 'Assembly with lockstitch and overlock passes'],
-  ['Pressing & finishing', 'Steam shaping + quality inspection'],
+  ['Receive customer item', 'Check fabric damage, stains, loose seam, or size request'],
+  ['Select service order', 'Repair, resize, patch, or outfit sale with fitting notes'],
+  ['Stitch and adjust', 'Use controlled seam work to keep garment shape natural'],
+  ['Final fitting check', 'Validate alignment, sleeve balance, and hem symmetry'],
+  ['Deliver + payment', 'Hand over item, close ticket, and gain RP reputation'],
 ];
 
-const inventoryData = [
-  ['Premium Wool', '12 bolts · suited for formalwear'],
-  ['Linen Blend', '8 bolts · breathable summer stock'],
-  ['Silk Lining', '16 rolls · luxury finishing'],
-  ['High-tensile Thread', '42 spools · color matched sets'],
+const serviceData = [
+  ['Hem repair', '$120 · 8 min · low complexity'],
+  ['Jacket resize', '$300 · 14 min · medium complexity'],
+  ['Luxury dress fitting', '$540 · 20 min · high complexity'],
+  ['Uniform patch + reinforce', '$180 · 10 min · service contract'],
 ];
 
 const ordersData = [
-  ['Business suit adjustments', 'Deadline: 14:00 · Complexity: High'],
-  ['Wedding dress hemline', 'Deadline: 16:20 · Complexity: Very High'],
-  ['Streetwear jacket resize', 'Deadline: 18:00 · Complexity: Medium'],
-  ['Uniform trouser repairs', 'Deadline: 19:15 · Complexity: Low'],
+  ['Citizen #1482', 'Torn jeans knee repair · Pickup 13:30 · <b>Urgent</b>'],
+  ['Taxi Driver', 'Seatwear suit sleeve resize · Pickup 14:20 · Normal'],
+  ['Wedding client', 'Dress waist adjustment · Pickup 16:00 · <b>Priority</b>'],
+  ['Police contract', 'Uniform elbow reinforcement · Pickup 17:10 · Normal'],
 ];
 
 const workflowSteps = document.querySelector('#workflowSteps');
-const inventoryList = document.querySelector('#inventoryList');
+const serviceList = document.querySelector('#serviceList');
 const orderList = document.querySelector('#orderList');
 
 for (const [name, detail] of workflowData) {
@@ -30,111 +30,183 @@ for (const [name, detail] of workflowData) {
   workflowSteps.append(li);
 }
 
-for (const [name, detail] of inventoryData) {
+for (const [name, detail] of serviceData) {
   const row = document.createElement('div');
   row.className = 'inv-row';
   row.innerHTML = `<strong>${name}</strong><small>${detail}</small>`;
-  inventoryList.append(row);
+  serviceList.append(row);
 }
 
 for (const [name, detail] of ordersData) {
   const li = document.createElement('li');
-  li.innerHTML = `<strong>${name}</strong>${detail}`;
+  li.innerHTML = `<strong>${name}</strong><span>${detail}</span>`;
   orderList.append(li);
 }
 
-const needle = document.querySelector('#needle');
-const stitchBtn = document.querySelector('#stitchBtn');
+const stitchField = document.querySelector('#stitchField');
 const startBtn = document.querySelector('#startBtn');
+const resetBtn = document.querySelector('#resetBtn');
 const qualityValue = document.querySelector('#qualityValue');
 const completedValue = document.querySelector('#completedValue');
 const comboValue = document.querySelector('#comboValue');
-const profitValue = document.querySelector('#profitValue');
+const earningsValue = document.querySelector('#earningsValue');
 const repMeter = document.querySelector('#repMeter');
 const repLabel = document.querySelector('#repLabel');
-const sweetZone = document.querySelector('#sweetZone');
+const statusText = document.querySelector('#statusText');
 
-let running = false;
-let needlePos = 0;
-let direction = 1;
+let points = [];
+let activeIndex = 0;
+let dragging = false;
+let sessionActive = false;
 let quality = 0;
 let completed = 0;
 let combo = 0;
-let profit = 0;
-let frame;
+let earnings = 0;
+let mistakes = 0;
 
-function renderStats() {
-  qualityValue.textContent = `${Math.min(100, Math.round(quality))}%`;
+function createSeamLayout() {
+  stitchField.innerHTML = '';
+
+  const seam = document.createElement('div');
+  seam.className = 'seam-line';
+  stitchField.append(seam);
+
+  const cursor = document.createElement('div');
+  cursor.id = 'needleCursor';
+  cursor.className = 'needle-cursor';
+  cursor.style.left = '8%';
+  cursor.style.top = '50%';
+  stitchField.append(cursor);
+
+  points = [];
+  const count = 8;
+
+  for (let i = 0; i < count; i += 1) {
+    const point = document.createElement('div');
+    point.className = 'stitch-point';
+
+    const left = 10 + (i * 10.5);
+    const wave = i % 2 === 0 ? -10 : 10;
+    const top = 50 + wave;
+
+    point.style.left = `${left}%`;
+    point.style.top = `${top}%`;
+    point.dataset.index = String(i);
+
+    stitchField.append(point);
+    points.push(point);
+  }
+}
+
+function updateStats() {
+  qualityValue.textContent = `${Math.max(0, Math.min(100, Math.round(quality)))}%`;
   completedValue.textContent = completed;
   comboValue.textContent = `${combo}x`;
-  profitValue.textContent = `$${profit.toLocaleString()}`;
+  earningsValue.textContent = `$${earnings.toLocaleString()}`;
 
-  const rep = Math.min(100, Math.round(20 + quality * 0.65 + combo * 2));
+  const rep = Math.min(100, Math.round(20 + quality * 0.55 + combo * 4));
   repMeter.style.width = `${rep}%`;
 
-  if (rep < 40) repLabel.textContent = 'Local Alterations Tier';
-  else if (rep < 70) repLabel.textContent = 'Boutique Atelier Tier';
-  else repLabel.textContent = 'Elite Tailoring House Tier';
+  if (rep < 35) repLabel.textContent = 'Neighborhood Tailor';
+  else if (rep < 70) repLabel.textContent = 'Trusted Alteration Shop';
+  else repLabel.textContent = 'Premium RP Tailor Service';
 }
 
-function animateNeedle() {
-  if (!running) return;
+function resetSeamProgress(message = 'Seam reset. Hold mouse and stitch through points in order.') {
+  activeIndex = 0;
+  dragging = false;
+  statusText.textContent = message;
 
-  needlePos += direction * 1.7;
-  if (needlePos <= 0 || needlePos >= 99) direction *= -1;
-
-  needle.style.left = `${needlePos}%`;
-  frame = requestAnimationFrame(animateNeedle);
+  for (const point of points) point.classList.remove('hit');
 }
 
-function stitch() {
-  if (!running) return;
+function beginSession() {
+  sessionActive = true;
+  mistakes = 0;
+  resetSeamProgress('Garment prepared. Hold left mouse button and follow stitch points.');
+}
 
-  const sweetStart = sweetZone.offsetLeft;
-  const sweetEnd = sweetStart + sweetZone.clientWidth;
-  const needleCenter = needle.offsetLeft + needle.clientWidth / 2;
-  const perfectWindow = 12;
+function finishSeam() {
+  const seamQuality = Math.max(50, 100 - mistakes * 12);
+  quality = Math.min(100, (quality * 0.45) + seamQuality * 0.55);
 
-  const distanceToCenter = Math.abs(needleCenter - (sweetStart + sweetZone.clientWidth / 2));
-  const isHit = needleCenter >= sweetStart && needleCenter <= sweetEnd;
-
-  if (isHit) {
+  if (seamQuality >= 82) {
     combo += 1;
-    const precisionBonus = Math.max(6, 18 - distanceToCenter / perfectWindow);
-    quality += precisionBonus;
-    profit += Math.round(90 + combo * 14 + precisionBonus * 2.5);
-
-    if (combo % 4 === 0) completed += 1;
+    completed += 1;
+    earnings += 180 + combo * 30;
+    statusText.textContent = `Clean stitch! Quality ${seamQuality}%. Customer satisfied.`;
   } else {
     combo = 0;
-    quality = Math.max(0, quality - 9);
-    profit = Math.max(0, profit - 35);
+    earnings += 90;
+    statusText.textContent = `Seam completed with corrections (${seamQuality}%). Payment reduced.`;
   }
 
-  renderStats();
+  updateStats();
+  resetSeamProgress('Prepare next garment or continue practicing this seam.');
 }
 
-function startShift() {
-  if (running) return;
-  running = true;
-  needlePos = 0;
-  direction = 1;
-  quality = 35;
-  completed = 0;
-  combo = 0;
-  profit = 0;
-  renderStats();
-  animateNeedle();
+function setCursorPosition(event) {
+  const cursor = document.querySelector('#needleCursor');
+  if (!cursor) return;
+
+  const rect = stitchField.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  cursor.style.left = `${x}px`;
+  cursor.style.top = `${y}px`;
 }
 
-startBtn.addEventListener('click', startShift);
-stitchBtn.addEventListener('click', stitch);
+function handleMove(event) {
+  setCursorPosition(event);
 
-document.addEventListener('keydown', (event) => {
-  if (event.code === 'Space') {
-    event.preventDefault();
-    stitch();
+  if (!sessionActive || !dragging) return;
+
+  const target = points[activeIndex];
+  if (!target) return;
+
+  const targetRect = target.getBoundingClientRect();
+  const withinX = event.clientX >= targetRect.left && event.clientX <= targetRect.right;
+  const withinY = event.clientY >= targetRect.top && event.clientY <= targetRect.bottom;
+
+  if (withinX && withinY) {
+    target.classList.add('hit');
+    activeIndex += 1;
+
+    if (activeIndex >= points.length) finishSeam();
   }
+}
+
+stitchField.addEventListener('mousedown', (event) => {
+  if (!sessionActive) return;
+  dragging = true;
+  setCursorPosition(event);
 });
 
-renderStats();
+window.addEventListener('mouseup', () => {
+  if (!sessionActive) return;
+  if (dragging && activeIndex > 0 && activeIndex < points.length) {
+    mistakes += 1;
+    combo = 0;
+    statusText.textContent = 'Thread slipped. Hold mouse and continue from start.';
+    resetSeamProgress('Thread slipped. Restart seam from point 1.');
+    updateStats();
+  }
+  dragging = false;
+});
+
+stitchField.addEventListener('mousemove', handleMove);
+
+startBtn.addEventListener('click', beginSession);
+resetBtn.addEventListener('click', () => {
+  if (!sessionActive) {
+    statusText.textContent = 'Prepare garment first.';
+    return;
+  }
+  mistakes += 1;
+  combo = 0;
+  resetSeamProgress('Manual reset. Begin stitching again from first point.');
+  updateStats();
+});
+
+createSeamLayout();
+updateStats();

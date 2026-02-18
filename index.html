@@ -17,71 +17,68 @@
     <main class="app-shell">
       <section class="topbar glass">
         <div>
-          <p class="eyebrow">Los Santos Craft District</p>
-          <h1>TailorJob Workshop</h1>
+          <p class="eyebrow">Downtown Textile Corner · FiveM RP</p>
+          <h1>Tailor Service Job</h1>
         </div>
         <div class="wallet">
-          <span>Daily Profit</span>
-          <strong id="profitValue">$0</strong>
+          <span>Shift Earnings</span>
+          <strong id="earningsValue">$0</strong>
         </div>
       </section>
 
       <section class="dashboard-grid">
         <article class="panel glass">
           <header>
-            <h2>Production Flow</h2>
-            <p>Real-world garment process adapted for RP immersion.</p>
+            <h2>Player Job Actions</h2>
+            <p>Focused RP flow: receive order, repair/adjust, deliver, and get paid.</p>
           </header>
           <ol class="workflow" id="workflowSteps"></ol>
         </article>
 
         <article class="panel glass">
           <header>
-            <h2>Fabric Inventory</h2>
-            <p>Track bolts, trims, and thread quality.</p>
+            <h2>Service Menu</h2>
+            <p>In-game realistic tailor services for customers.</p>
           </header>
-          <div class="inventory" id="inventoryList"></div>
+          <div class="inventory" id="serviceList"></div>
         </article>
 
         <article class="panel glass full">
           <header>
-            <h2>Stitch Precision Minigame</h2>
+            <h2>Mouse Stitching Minigame</h2>
             <p>
-              Match the moving needle in the sweet zone to maintain stitch quality and avoid
-              damaged seams.
+              Hold mouse button on the needle and guide it through seam points in order. Releasing
+              early or missing points reduces quality.
             </p>
           </header>
           <div class="minigame" id="minigame">
-            <div class="bar">
-              <div class="sweet-zone" id="sweetZone"></div>
-              <div class="needle" id="needle"></div>
-            </div>
+            <div class="stitch-field" id="stitchField"></div>
             <div class="controls">
-              <button id="stitchBtn">Stitch (Space)</button>
-              <button id="startBtn">Start Shift</button>
+              <button id="startBtn">Prepare Garment</button>
+              <button id="resetBtn">Reset Seam</button>
             </div>
             <div class="stats">
               <div>
-                <span>Quality</span>
+                <span>Stitch Accuracy</span>
                 <strong id="qualityValue">0%</strong>
               </div>
               <div>
-                <span>Completed Garments</span>
+                <span>Jobs Completed</span>
                 <strong id="completedValue">0</strong>
               </div>
               <div>
-                <span>Combo</span>
+                <span>Combo Service</span>
                 <strong id="comboValue">0x</strong>
               </div>
             </div>
-            <p class="hint">Perfect timing boosts payment and unlocks premium clientele.</p>
+            <p class="hint" id="statusText">Click “Prepare Garment” to begin stitching.</p>
           </div>
         </article>
 
         <article class="panel glass">
           <header>
             <h2>Customer Queue</h2>
-            <p>Each order includes measurements, deadline, and tailoring complexity.</p>
+            <p>Live queue from front desk: alter, repair, and sales pickup requests.</p>
           </header>
           <ul class="orders" id="orderList"></ul>
         </article>
@@ -89,11 +86,11 @@
         <article class="panel glass">
           <header>
             <h2>Shop Reputation</h2>
-            <p>Built from punctuality, fit accuracy, and fabric choice.</p>
+            <p>Influenced by delivery time, stitch quality, and customer satisfaction.</p>
           </header>
           <div class="reputation">
             <div class="meter"><span id="repMeter"></span></div>
-            <p id="repLabel">Local Alterations Tier</p>
+            <p id="repLabel">Neighborhood Tailor</p>
           </div>
         </article>
       </section>
