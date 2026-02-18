@@ -20,30 +20,9 @@ const ordersData = [
   ['Police contract', 'Uniform elbow reinforcement · Pickup 17:10 · Normal'],
 ];
 
-const playerInventoryData = [
-  'Repair Kit x2',
-  'Premium Thread (Black) x12',
-  'Premium Thread (White) x8',
-  'Fabric Patch Set x5',
-  'Tailor Scissors x1',
-];
-
 const workflowSteps = document.querySelector('#workflowSteps');
 const serviceList = document.querySelector('#serviceList');
 const orderList = document.querySelector('#orderList');
-const stitchField = document.querySelector('#stitchField');
-const startBtn = document.querySelector('#startBtn');
-const resetBtn = document.querySelector('#resetBtn');
-const inventoryBtn = document.querySelector('#inventoryBtn');
-const qualityValue = document.querySelector('#qualityValue');
-const completedValue = document.querySelector('#completedValue');
-const comboValue = document.querySelector('#comboValue');
-const earningsValue = document.querySelector('#earningsValue');
-const repMeter = document.querySelector('#repMeter');
-const repLabel = document.querySelector('#repLabel');
-const statusText = document.querySelector('#statusText');
-const playerInventory = document.querySelector('#playerInventory');
-const inventoryItems = document.querySelector('#inventoryItems');
 
 for (const [name, detail] of workflowData) {
   const li = document.createElement('li');
@@ -64,12 +43,16 @@ for (const [name, detail] of ordersData) {
   orderList.append(li);
 }
 
-for (const item of playerInventoryData) {
-  const li = document.createElement('li');
-  li.textContent = item;
-  inventoryItems.append(li);
-}
-
+const stitchField = document.querySelector('#stitchField');
+const startBtn = document.querySelector('#startBtn');
+const resetBtn = document.querySelector('#resetBtn');
+const qualityValue = document.querySelector('#qualityValue');
+const completedValue = document.querySelector('#completedValue');
+const comboValue = document.querySelector('#comboValue');
+const earningsValue = document.querySelector('#earningsValue');
+const repMeter = document.querySelector('#repMeter');
+const repLabel = document.querySelector('#repLabel');
+const statusText = document.querySelector('#statusText');
 
 let points = [];
 let activeIndex = 0;
@@ -140,8 +123,6 @@ function resetSeamProgress(message = 'Seam reset. Hold mouse and stitch through 
 function beginSession() {
   sessionActive = true;
   mistakes = 0;
-  createSeamLayout();
-  stitchField.hidden = false;
   resetSeamProgress('Garment prepared. Hold left mouse button and follow stitch points.');
 }
 
@@ -216,12 +197,6 @@ window.addEventListener('mouseup', () => {
 stitchField.addEventListener('mousemove', handleMove);
 
 startBtn.addEventListener('click', beginSession);
-inventoryBtn.addEventListener('click', () => {
-  const isHidden = playerInventory.hasAttribute('hidden');
-  if (isHidden) playerInventory.removeAttribute('hidden');
-  else playerInventory.setAttribute('hidden', '');
-});
-
 resetBtn.addEventListener('click', () => {
   if (!sessionActive) {
     statusText.textContent = 'Prepare garment first.';
@@ -234,6 +209,4 @@ resetBtn.addEventListener('click', () => {
 });
 
 createSeamLayout();
-stitchField.hidden = true;
-statusText.textContent = 'Click “Prepare Garment” to load seam and start stitching.';
 updateStats();
